@@ -12,7 +12,6 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 })
 
-// Safe model creation
 const User = mongoose.models.User || mongoose.model('User', userSchema)
 
 // Connect to MongoDB
