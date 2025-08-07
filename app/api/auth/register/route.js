@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -20,12 +19,9 @@ async function connectDB() {
   if (mongoose.connections[0].readyState) {
     return
   }
-
+  
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
+    await mongoose.connect(process.env.MONGODB_URI)
     console.log('Connected to MongoDB')
   } catch (error) {
     console.error('MongoDB connection error:', error)
@@ -36,58 +32,49 @@ async function connectDB() {
 export async function POST(request) {
   try {
     await connectDB()
+    
+    const { name, email, password } = await request.json()
 
-    const { email, password } = await request.json()
-
-    if (!email || !password) {
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { message: 'Email and password are required' },
+        { message: 'All fields are required' },
         { status: 400 }
       )
     }
 
-    // Find user
-    const user = await User.findOne({ email })
-    if (!user) {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email })
+    if (existingUser) {
       return NextResponse.json(
-        { message: 'Invalid credentials' },
-        { status: 401 }
+        { message: 'User already exists' },
+        { status: 400 }
       )
     }
 
-    // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password)
-    if (!isValidPassword) {
-      return NextResponse.json(
-        { message: 'Invalid credentials' },
-        { status: 401 }
-      )
-    }
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Generate JWT token
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        email: user.email,
-        role: user.role
-      },
-      process.env.JWT_SECRET || 'forest_secret_key_2024',
-      { expiresIn: '24h' }
-    )
+    // Create user
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword
+    })
+
+    await user.save()
 
     return NextResponse.json({
-      message: 'Login successful',
-      token,
+      message: 'User created successfully',
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         role: user.role
       }
-    })
+    }, { status: 201 })
 
   } catch (error) {
-    console.error('Login error:', error)
+    console.error('Register error:', error)
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

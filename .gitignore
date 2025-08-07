@@ -100,11 +100,3 @@ jspm_packages/
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
-
-# Vercel
-.vercel
-
-# Server files (not needed for Vercel deployment)
-server/node_modules/
-server/.env
-server/uploads/
