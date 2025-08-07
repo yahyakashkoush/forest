@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -29,52 +29,43 @@ async function connectDB() {
   }
 }
 
-export async function POST(request) {
+// GET - Get current user
+export async function GET(request) {
   try {
     await connectDB()
     
-    const { name, email, password } = await request.json()
-
-    if (!name || !email || !password) {
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { message: 'All fields are required' },
-        { status: 400 }
+        { message: 'No token provided' },
+        { status: 401 }
       )
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email })
-    if (existingUser) {
-      return NextResponse.json(
-        { message: 'User already exists' },
-        { status: 400 }
-      )
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10)
-
-    // Create user
-    const user = new User({
-      name,
-      email,
-      password: hashedPassword
-    })
-
-    await user.save()
-
-    return NextResponse.json({
-      message: 'User created successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
+    const token = authHeader.substring(7)
+    
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'forest_secret_key_2024')
+      const user = await User.findById(decoded.userId).select('-password')
+      
+      if (!user) {
+        return NextResponse.json(
+          { message: 'User not found' },
+          { status: 404 }
+        )
       }
-    }, { status: 201 })
 
+      return NextResponse.json({ user })
+      
+    } catch (jwtError) {
+      return NextResponse.json(
+        { message: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+    
   } catch (error) {
-    console.error('Register error:', error)
+    console.error('Get user error:', error)
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

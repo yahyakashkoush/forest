@@ -21,7 +21,8 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`)
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'
+      const response = await axios.get(`${apiUrl}/auth/me`)
       setUser(response.data.user)
     } catch (error) {
       localStorage.removeItem('token')
@@ -33,7 +34,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'
+      const response = await axios.post(`${apiUrl}/auth/login`, {
         email,
         password
       })
@@ -54,7 +56,8 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password) => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'
+      const response = await axios.post(`${apiUrl}/auth/register`, {
         name,
         email,
         password

@@ -12,13 +12,8 @@ const productSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 })
 
-// Prevent re-compilation error
-let Product
-try {
-  Product = mongoose.model('Product')
-} catch {
-  Product = mongoose.model('Product', productSchema)
-}
+// Safe model creation
+const Product = mongoose.models.Product || mongoose.model('Product', productSchema)
 
 // Connect to MongoDB
 async function connectDB() {

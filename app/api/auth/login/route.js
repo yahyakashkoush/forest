@@ -12,13 +12,8 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 })
 
-// Prevent re-compilation error
-let User
-try {
-  User = mongoose.model('User')
-} catch {
-  User = mongoose.model('User', userSchema)
-}
+// Safe model creation
+const User = mongoose.models.User || mongoose.model('User', userSchema)
 
 // Connect to MongoDB
 async function connectDB() {
